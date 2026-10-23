@@ -1,0 +1,163 @@
+// =========================================================================
+// POSTOP-CHECK PRISMA SCHEMA (Neon PostgreSQL)
+// =========================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  DOCTOR
+  PATIENT
+  ADMIN
+}
+
+enum TriageStatus {
+  RED
+  AMBER
+  GREEN
+}
+
+enum KneeSide {
+  LEFT
+  RIGHT
+  BILATERAL
+}
+
+model Doctor {
+  id          String   @id @default(uuid())
+  clerkId     String   @unique
+  email       String   @unique
+  name        String
+  hospital    String   @default("St. Jude Orthopedic Center")
+  specialty   String   @default("Adult Reconstruction & Joint Replacement")
+  phone       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  patients    Patient[]
+  invites     InviteToken[]
+
+  @@map("doctors")
+}
+
+model InviteToken {
+  id           String    @id @default(uuid())
+  token        String    @unique
+  doctorId     String
+  doctor       Doctor    @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  patientName  String?
+  patientEmail String?
+  surgeryDate  DateTime
+  kneeSide     KneeSide  @default(RIGHT)
+  used         Boolean   @default(false)
+  usedAt       DateTime?
+  expiresAt    DateTime
+  createdAt    DateTime  @default(now())
+
+  patient      Patient?
+
+  @@map("invite_tokens")
+}
+
+model Patient {
+  id                     String        @id @default(uuid())
+  clerkId                String        @unique
+  doctorId               String
+  doctor                 Doctor        @relation(fields: [doctorId], references: [id], onDelete: Restrict)
+  inviteTokenId          String?       @unique
+  inviteToken            InviteToken?  @relation(fields: [inviteTokenId], references: [id])
+  
+  name                   String
+  email                  String        @unique
+  age                    Int           @default(65)
+  gender                 String        @default("FEMALE")
+  surgeryDate            DateTime
+  kneeSide               KneeSide      @default(RIGHT)
+  phone                  String?
+  emergencyContact       String?
+
+  // Baseline Clinical Features (NHS PROMs Baseline)
+  baselineOKS            Float         @default(18.0) // Oxford Knee Score (0-48)
+  baselineEQ5D           Float         @default(0.42) // UK Dolan EQ-5D Index
+  comorbidityCount       Int           @default(2)
+  hasHeartDisease        Boolean       @default(false)
+  hasHighBloodPressure   Boolean       @default(true)
+  hasDiabetes            Boolean       @default(false)
+  hasStroke              Boolean       @default(false)
+  hasArthritis           Boolean       @default(true)
+
+  // Current Live Recovery State
+  currentTriageStatus    TriageStatus  @default(GREEN)
+  currentRiskProbability Float         @default(0.12)
+  lastCheckinDay         Int           @default(1)
+  lastCheckinDate        DateTime?
+
+  createdAt              DateTime      @default(now())
+  updatedAt              DateTime      @updatedAt
+
+  checkins               Checkin[]
+  safetyAlerts           SafetyAlert[]
+
+  @@map("patients")
+}
+
+model Checkin {
+  id                          String       @id @default(uuid())
+  patientId                   String
+  patient                     Patient      @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  dayNumber                   Int
+  date                        DateTime     @default(now())
+
+  // Layer 1: Deterministic Red Flags (AAOS Safety Protocol)
+  feverReported               Boolean      @default(false)
+  woundDrainageReported       Boolean      @default(false)
+  calfPainReported            Boolean      @default(false)
+  footDropReported            Boolean      @default(false)
+  chestPainShortnessOfBreath  Boolean      @default(false)
+
+  // Layer 2: Daily Continuous Recovery Metrics
+  painScore                   Int          // 0 to 10
+  flexionDegrees              Int          // Knee bend degrees (e.g. 60 - 110)
+  walkingStepsOrMeters        Int          // Daily walking progress
+  swellingScore               Int          @default(2) // 1 (mild) to 5 (severe)
+  opioidPillsTaken            Int          @default(0)
+  patientFreeNotes            String?
+
+  // Layer 3: Evaluated Triage Output
+  triageStatus                TriageStatus @default(GREEN)
+  triageLayer                 Int          @default(3) // 1=Rule, 2=Trend, 3=ML
+  triageReason                String       // Human readable clinical reason
+  mlRiskProbability           Float        @default(0.10)
+  mlRiskClassification        String       @default("LOW") // LOW, MODERATE, HIGH
+
+  doctorAcknowledged          Boolean      @default(false)
+  doctorNotes                 String?
+
+  createdAt                   DateTime     @default(now())
+  safetyAlerts                SafetyAlert[]
+
+  @@index([patientId, dayNumber])
+  @@map("checkins")
+}
+
+model SafetyAlert {
+  id              String       @id @default(uuid())
+  patientId       String
+  patient         Patient      @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  checkinId       String?
+  checkin         Checkin?     @relation(fields: [checkinId], references: [id], onDelete: SetNull)
+  severity        TriageStatus // RED or AMBER
+  message         String
+  acknowledged    Boolean      @default(false)
+  acknowledgedAt  DateTime?
+  acknowledgedBy  String?
+  createdAt       DateTime     @default(now())
+
+  @@map("safety_alerts")
+}
