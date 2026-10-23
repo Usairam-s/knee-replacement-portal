@@ -196,6 +196,13 @@ function PatientDetailContent() {
 
   const isCriticalRed = latestCheckin?.triageStatus === "RED" || patient.currentTriageStatus === "RED";
   const isWatchAmber = latestCheckin?.triageStatus === "AMBER" || patient.currentTriageStatus === "AMBER";
+  const isDailyRedFlag = isCriticalRed && (
+    latestCheckin?.calfPainReported ||
+    latestCheckin?.woundDrainageReported ||
+    latestCheckin?.feverReported ||
+    latestCheckin?.footDropReported ||
+    postOpDays > 1
+  );
 
   return (
     <div className="min-h-screen bg-slate-50/70 text-slate-900 pb-16">
@@ -222,7 +229,13 @@ function PatientDetailContent() {
                     : "bg-emerald-50 text-emerald-700 border-emerald-200"
                 }`}
               >
-                {isCriticalRed ? "Critical Red Alert" : isWatchAmber ? "Watch (Amber)" : "Optimal Track"}
+                {isCriticalRed
+                  ? isDailyRedFlag
+                    ? "Critical Red Alert • Daily Check-in Flag"
+                    : "Critical Red Alert • Pre-Op AI Risk"
+                  : isWatchAmber
+                  ? "Watch (Amber) • Kinematic"
+                  : "Optimal Track"}
               </span>
             </div>
           </div>

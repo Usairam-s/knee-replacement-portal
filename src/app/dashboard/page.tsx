@@ -887,6 +887,7 @@ export default function DashboardPage() {
                     const pPasscode = patient.passcode || "1234";
                     const isRed = status === "RED";
                     const isAmber = status === "AMBER";
+                    const isDailyRedFlag = isRed && patient.lastCheckinDay > 1;
                     const fullPatientUrl = `${typeof window !== "undefined" ? window.location.origin : ""}/patient/${pToken}`;
 
                     return (
@@ -949,15 +950,22 @@ export default function DashboardPage() {
                           </div>
 
                           {/* Right: Triage Priority Badge & ML Risk Score */}
-                          <div className="flex items-center gap-2 shrink-0 self-start sm:self-auto">
+                          <div className="flex items-center gap-2 shrink-0 self-start sm:self-auto flex-wrap sm:flex-nowrap">
                             <span
-                              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border ${
+                              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border shadow-2xs ${
                                 isRed
                                   ? "bg-red-100 text-red-800 border-red-300"
                                   : isAmber
                                   ? "bg-amber-100 text-amber-800 border-amber-300"
                                   : "bg-emerald-100 text-emerald-800 border-emerald-300"
                               }`}
+                              title={
+                                isRed
+                                  ? isDailyRedFlag
+                                    ? "Active Alert Source: Daily check-in symptom reported (AAOS Red Flag safety net)"
+                                    : "Active Alert Source: Pre-operative AI risk model (severe baseline joint degeneration)"
+                                  : undefined
+                              }
                             >
                               <span
                                 className={`w-1.5 h-1.5 rounded-full ${
@@ -968,7 +976,13 @@ export default function DashboardPage() {
                                     : "bg-emerald-500"
                                 }`}
                               />
-                              {isRed ? "RED ALERT" : isAmber ? "WATCH (AMBER)" : "OPTIMAL TRACK"}
+                              {isRed
+                                ? isDailyRedFlag
+                                  ? "RED ALERT • Daily Check-in Flag"
+                                  : "RED ALERT • Pre-Op AI Model"
+                                : isAmber
+                                ? "WATCH (AMBER)"
+                                : "OPTIMAL TRACK"}
                             </span>
 
                             <span
@@ -979,8 +993,9 @@ export default function DashboardPage() {
                                   ? "bg-amber-50 text-amber-700 border-amber-200"
                                   : "bg-emerald-50 text-emerald-700 border-emerald-200"
                               }`}
+                              title="Pre-operative baseline prognostic prediction from AI model based on Oxford Knee Score and comorbidities"
                             >
-                              Baseline ML: {(patient.currentRiskProbability * 100).toFixed(1)}% Risk
+                              Pre-Op ML: {(patient.currentRiskProbability * 100).toFixed(1)}% Risk
                             </span>
                           </div>
                         </div>
@@ -1006,12 +1021,12 @@ export default function DashboardPage() {
                             )}
                             <p className="font-semibold text-[11px] leading-tight truncate">
                               {isRed
-                                ? patient.lastCheckinDay <= 1 && patient.currentRiskProbability >= 0.5
-                                  ? `Pre-Op AI Model: ${(patient.currentRiskProbability * 100).toFixed(0)}% High Risk (Severe baseline joint degeneration)`
-                                  : "Daily Check-in Trigger: AAOS Red Flag Reported (Urgent Clinical Evaluation Required)"
+                                ? isDailyRedFlag
+                                  ? "🚨 Daily Check-in Trigger: AAOS Red Flag Reported (Calf pain / DVT risk — Urgent Clinical Evaluation Required)"
+                                  : `🤖 Pre-Op AI Trigger: ${(patient.currentRiskProbability * 100).toFixed(0)}% High Risk (Severe baseline joint degeneration)`
                                 : isAmber
-                                ? "Kinematic Velocity Alert: Flexion plateau / Extension lag deficit observed"
-                                : "Recovery Velocity on Track: Biomechanical milestones meeting standard clinical targets"}
+                                ? "⚠️ Kinematic Velocity Alert: Flexion plateau / Extension lag deficit observed"
+                                : "✅ Recovery Velocity on Track: Biomechanical milestones meeting standard clinical targets"}
                             </p>
                           </div>
 
