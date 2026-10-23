@@ -83,13 +83,29 @@ export async function POST(request: Request) {
           `Day ${c.dayNumber}: Flexion ${c.flexionDegrees}°, Pain ${c.painScore}/10, Walking ${c.walkingMeters}m, Swelling Grade ${c.swellingScore} (0=none, 1=mild, 2=mod, 3=severe), Opioids ${c.opioidPills} pills/day. Red Flags: Fever=${c.fever}, WoundDrainage=${c.woundDrainage}, CalfPain=${c.calfPain}, FootDrop=${c.footDrop}. Status: ${c.triageStatus}. Trigger: ${c.triageReason}`
         ).join("\n");
 
+    // Format ML risk drivers
+    let formattedDrivers = "Standard surgical profile";
+    if (patient.mlRiskDrivers) {
+      if (Array.isArray(patient.mlRiskDrivers)) {
+        formattedDrivers = patient.mlRiskDrivers.join("; ");
+      } else if (typeof patient.mlRiskDrivers === "string") {
+        try {
+          const parsed = JSON.parse(patient.mlRiskDrivers);
+          formattedDrivers = Array.isArray(parsed) ? parsed.join("; ") : patient.mlRiskDrivers;
+        } catch {
+          formattedDrivers = patient.mlRiskDrivers;
+        }
+      }
+    }
+
     const systemPrompt = `You are the Chief Orthopedic Surgeon and Lead Physical Therapist reviewing a Total Knee Arthroplasty (TKA) recovery trajectory. 
-Analyze the longitudinal tele-monitoring data from Day 1 to present. 
+Analyze both the pre-operative ML risk model forecast (baseline joint status, OKS, multimorbidity, predicted complication risk) AND the longitudinal daily check-in tele-monitoring data from Day 1 to present. 
+Correlate whether the patient's actual recovery trajectory aligns with or diverges from their pre-operative ML risk forecast.
 Write an authoritative, rigorous clinical summary using precise medical, biomechanical, and physiotherapeutic terminology (e.g., active range of motion [AROM], Arthrogenic Muscle Inhibition [AMI], Vastus Medialis Obliquus [VMO], capsular distension, Wells criteria for DVT, periprosthetic joint infection [PJI], extensor lag).
 
 Return a strict, valid JSON object with the following schema:
 {
-  "executiveSummary": "2-3 sentence overarching clinical synthesis of this patient's current trajectory, highlighting critical trends or alerts.",
+  "executiveSummary": "2-3 sentence overarching clinical synthesis of this patient's current trajectory, correlating their pre-op ML risk with active recovery trends or alerts.",
   "kinematicProgress": "Detailed assessment of active knee flexion delta, functional walking distance, and sagittal tibiofemoral mobility.",
   "painAndEffusion": "Assessment of numeric pain score trajectory (NPRS), opioid sparing/weaning, and joint effusion impact on VMO recruitment (AMI).",
   "complicationAnalysis": "Analysis of any reported red flags (DVT symptoms, drainage, fever) or trajectory plateaus and the underlying pathology suspected.",
@@ -98,19 +114,21 @@ Return a strict, valid JSON object with the following schema:
   "triageVerdict": "A short, all-caps verdict (e.g., 'URGENT SURGICAL ESCALATION REQUIRED', 'MODERATE KINEMATIC PLATEAU AUDIT', or 'SAFE CLEARANCE - CONTINUE ACTIVE REHABILITATION')"
 }`;
 
-    const userPrompt = `Patient Clinical Profile:
+    const userPrompt = `Patient Clinical Profile & Pre-Op AI Risk Model:
 - Name: ${patient.name} (${patient.age}y ${patient.gender})
 - Surgery Date: ${patient.surgeryDate} (${patient.kneeSide} Knee TKA)
-- Pre-op Baseline Oxford Knee Score (OKS): ${patient.baselineOKS}/48
+- Pre-op Baseline Oxford Knee Score (OKS): ${patient.baselineOKS || "N/A"}/48
 - Multimorbidities: High BP: ${patient.hasHighBp}, Diabetes: ${patient.hasDiabetes}, Heart Disease: ${patient.hasHeartDisease}, Stroke: ${patient.hasStroke}, Arthritis: ${patient.hasArthritis} (Total Comorbidities: ${patient.comorbidityCount})
-- Baseline ML Risk: ${(patient.currentRiskProbability * 100).toFixed(1)}% (${patient.mlRiskTier})
+- Pre-Op ML Risk Probability: ${(patient.currentRiskProbability * 100).toFixed(1)}% (${patient.mlRiskTier || "Standard Risk"})
+- Pre-Op ML Key Risk Drivers: ${formattedDrivers}
+- Pre-Op ML Recommended Action Plan: ${patient.mlActionPlan || "Standard operative rehabilitation pathway"}
 - Current Triage Status: ${patient.currentTriageStatus}
 - Total Check-ins Recorded: ${checkins.length} days
 
-Longitudinal Recovery Log:
+Post-Operative Daily Tele-Monitoring Check-in Log:
 ${checkinHistoryText}
 
-Please generate the comprehensive AI Clinical Recovery Brief now.`;
+Please correlate the patient's pre-operative ML risk model forecast with their daily check-in recovery data, and generate the comprehensive AI Clinical Recovery Brief now.`;
 
     const openAiResponse = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",

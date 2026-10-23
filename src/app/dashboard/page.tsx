@@ -888,6 +888,7 @@ export default function DashboardPage() {
                     const isRed = status === "RED";
                     const isAmber = status === "AMBER";
                     const isDailyRedFlag = isRed && patient.lastCheckinDay > 1;
+                    const isDailyAmber = isAmber && patient.lastCheckinDay > 1;
                     const fullPatientUrl = `${typeof window !== "undefined" ? window.location.origin : ""}/patient/${pToken}`;
 
                     return (
@@ -964,6 +965,10 @@ export default function DashboardPage() {
                                   ? isDailyRedFlag
                                     ? "Active Alert Source: Daily check-in symptom reported (AAOS Red Flag safety net)"
                                     : "Active Alert Source: Pre-operative AI risk model (severe baseline joint degeneration)"
+                                  : isAmber
+                                  ? isDailyAmber
+                                    ? "Active Alert Source: Daily check-in kinematic lag (flexion plateau / extension deficit)"
+                                    : "Active Alert Source: Pre-operative AI risk model (moderate baseline complication risk)"
                                   : undefined
                               }
                             >
@@ -981,7 +986,9 @@ export default function DashboardPage() {
                                   ? "RED ALERT • Daily Check-in Flag"
                                   : "RED ALERT • Pre-Op AI Model"
                                 : isAmber
-                                ? "WATCH (AMBER)"
+                                ? isDailyAmber
+                                  ? "WATCH • Kinematic Deficit"
+                                  : "WATCH • Pre-Op AI Model"
                                 : "OPTIMAL TRACK"}
                             </span>
 
@@ -1025,7 +1032,11 @@ export default function DashboardPage() {
                                   ? "🚨 Daily Check-in Trigger: AAOS Red Flag Reported (Calf pain / DVT risk — Urgent Clinical Evaluation Required)"
                                   : `🤖 Pre-Op AI Trigger: ${(patient.currentRiskProbability * 100).toFixed(0)}% High Risk (Severe baseline joint degeneration)`
                                 : isAmber
-                                ? "⚠️ Kinematic Velocity Alert: Flexion plateau / Extension lag deficit observed"
+                                ? isDailyAmber
+                                  ? "⚠️ Kinematic Velocity Alert: Flexion plateau / Extension lag deficit observed"
+                                  : `🤖 Pre-Op AI Trigger: ${(patient.currentRiskProbability * 100).toFixed(1)}% Moderate Risk (Clinical watch assigned prior to check-ins)`
+                                : patient.lastCheckinDay <= 1
+                                ? `✅ Pre-Op AI Clearance: ${(patient.currentRiskProbability * 100).toFixed(1)}% Low Risk (Standard recovery protocol clearance)`
                                 : "✅ Recovery Velocity on Track: Biomechanical milestones meeting standard clinical targets"}
                             </p>
                           </div>
