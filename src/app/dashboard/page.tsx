@@ -66,6 +66,7 @@ interface EnrolledPatientResult {
   kneeSide: string;
   accessToken: string;
   passcode: string;
+  phone?: string;
   link: string;
   mlRiskProbability?: number;
   mlRiskTier?: string;
@@ -212,6 +213,41 @@ export default function DashboardPage() {
   const [copiedLink, setCopiedLink] = useState(false);
   const [copiedPIN, setCopiedPIN] = useState(false);
   const [copiedRowId, setCopiedRowId] = useState<string | null>(null);
+
+  // Helper function to build official WhatsApp deep links
+  function openWhatsApp(phone: string | undefined | null, message: string) {
+    const cleanDigits = (phone || "").replace(/[^0-9]/g, "");
+    const encoded = encodeURIComponent(message);
+    const url = cleanDigits.length >= 7
+      ? `https://wa.me/${cleanDigits}?text=${encoded}`
+      : `https://wa.me/?text=${encoded}`;
+    window.open(url, "_blank", "noopener,noreferrer");
+  }
+
+  function handleSendWelcomeWhatsApp(patient: { name: string; kneeSide: string; passcode?: string; accessToken?: string; phone?: string }) {
+    const origin = typeof window !== "undefined" ? window.location.origin : "";
+    const token = patient.accessToken || "patient";
+    const portalUrl = `${origin}/patient/${token}`;
+    const pin = patient.passcode || "1234";
+
+    const msg = `👋 Hello ${patient.name}!\n\nThis is your surgical team from PostOpCheck 🩺. Here is your personal knee recovery link for your daily 60-second recovery check-ins following your ${patient.kneeSide} Knee TKA surgery:\n\n🔗 *Your Daily Recovery Portal:*\n${portalUrl}\n\n🔑 *Your 4-Digit Access PIN:* ${pin}\n\n📱 *Instructions:*\nPlease tap the link each morning to record your knee bend and pain score. We recommend bookmarking this page or saving this chat so you can find it easily every day. Wishing you a swift and steady recovery!`;
+    
+    openWhatsApp(patient.phone, msg);
+    toast.success(`Opening WhatsApp for ${patient.name}...`);
+  }
+
+  function handleSendDailyReminderWhatsApp(patient: PatientRecord) {
+    const origin = typeof window !== "undefined" ? window.location.origin : "";
+    const token = patient.accessToken || `pt-${patient.id}`;
+    const portalUrl = `${origin}/patient/${token}`;
+    const pin = patient.passcode || "1234";
+    const day = patient.lastCheckinDay || 1;
+
+    const msg = `🩺 *PostOpCheck Recovery Reminder*\n\nHi ${patient.name}, friendly reminder from your orthopedic care team to submit your *Day ${day}* knee recovery check-in today:\n\n🔗 *Log Check-in Now:*\n${portalUrl}\n\n🔑 *PIN:* ${pin}\n\nIt takes less than 60 seconds and helps your doctor ensure your recovery stays safely on track. Thank you!`;
+
+    openWhatsApp(patient.phone, msg);
+    toast.success(`Opening WhatsApp reminder for ${patient.name}...`);
+  }
 
   // Auto-sync signed-in Doctor quietly in background (no annoying popups on every login)
   const syncedDoctorRef = useRef<string | null>(null);
@@ -1056,6 +1092,16 @@ export default function DashboardPage() {
                               </button>
                             </div>
 
+                            {/* 1-Click WhatsApp Reminder Button */}
+                            <button
+                              onClick={() => handleSendDailyReminderWhatsApp(patient)}
+                              title={`Send Day ${patient.lastCheckinDay} check-in reminder on WhatsApp`}
+                              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 hover:border-emerald-300 transition-colors shadow-2xs whitespace-nowrap cursor-pointer"
+                            >
+                              <MessageSquare className="w-3.5 h-3.5 text-emerald-600 fill-emerald-600" />
+                              <span>Remind</span>
+                            </button>
+
                             <button
                               onClick={() => handleGenerateAiBrief(patient.id)}
                               disabled={isGeneratingAiBrief}
@@ -1195,6 +1241,14 @@ export default function DashboardPage() {
                           {copiedRowId === p.id ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5 text-slate-400" />}
                           <span>{copiedRowId === p.id ? "Copied!" : "Copy Link"}</span>
                         </button>
+                        <button
+                          onClick={() => handleSendDailyReminderWhatsApp(p)}
+                          className="py-2 px-3 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 font-semibold text-xs flex items-center justify-center gap-1.5 hover:bg-emerald-100"
+                          title="Send WhatsApp Link / Reminder"
+                        >
+                          <MessageSquare className="w-3.5 h-3.5 text-emerald-600 fill-emerald-600" />
+                          <span>WhatsApp</span>
+                        </button>
                         <a
                           href={`${fullUrl}?view=doctor`}
                           target="_blank"
@@ -1244,6 +1298,15 @@ export default function DashboardPage() {
                           </td>
                           <td className="px-4 py-3 text-right">
                             <div className="inline-flex items-center gap-2">
+                              <button
+                                onClick={() => handleSendDailyReminderWhatsApp(p)}
+                                className="px-2.5 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-semibold text-xs border border-emerald-200 transition-colors inline-flex items-center gap-1 cursor-pointer"
+                                title="Send recovery link / check-in reminder on WhatsApp"
+                              >
+                                <MessageSquare className="w-3 h-3 text-emerald-600 fill-emerald-600" />
+                                <span>WhatsApp</span>
+                              </button>
+
                               <button
                                 onClick={() => {
                                   copyTextWithToast(fullUrl, "Patient Recovery Link");
@@ -2389,6 +2452,44 @@ export default function DashboardPage() {
                     )}
                   </div>
                 )}
+
+                {/* 1-Click WhatsApp Welcome Dispatch */}
+                <div className="p-3.5 bg-emerald-50/80 rounded-xl border border-emerald-200/90 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-emerald-950 flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                      Instant Patient WhatsApp Dispatch
+                    </span>
+                    <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-100/70 px-2 py-0.5 rounded-full">
+                      Zero Manual Typing
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-emerald-800 leading-relaxed">
+                    Send the personalized recovery portal link and access PIN straight to the patient&apos;s phone via WhatsApp with one click:
+                  </p>
+                  <button
+                    onClick={() => handleSendWelcomeWhatsApp({
+                      name: enrolledResult.name,
+                      kneeSide: enrolledResult.kneeSide,
+                      passcode: enrolledResult.passcode,
+                      accessToken: enrolledResult.accessToken,
+                      phone: enrolledResult.phone || enrollPhone,
+                    })}
+                    className="w-full py-2.5 px-4 rounded-xl font-bold text-xs text-white bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <MessageSquare className="w-4 h-4 fill-white" />
+                    <span>Send Daily Check-in Link on WhatsApp</span>
+                  </button>
+                  {enrolledResult.phone || enrollPhone ? (
+                    <p className="text-[10px] text-emerald-700 text-center font-mono">
+                      Target: {enrolledResult.phone || enrollPhone}
+                    </p>
+                  ) : (
+                    <p className="text-[10px] text-slate-500 text-center">
+                      No mobile number provided &bull; will open WhatsApp to select contact
+                    </p>
+                  )}
+                </div>
 
                 {/* Delivery Options */}
                 <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-2">

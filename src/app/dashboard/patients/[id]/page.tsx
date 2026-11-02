@@ -14,6 +14,7 @@ import {
   AlertCircle,
   CheckCircle2,
   Phone,
+  MessageSquare,
   Copy,
   Check,
   ShieldAlert,
@@ -259,6 +260,25 @@ function PatientDetailContent() {
               <ExternalLink className="w-3.5 h-3.5 text-teal-600" />
               <span className="hidden sm:inline">Open Portal</span>
             </a>
+
+            <button
+              onClick={() => {
+                const origin = typeof window !== "undefined" ? window.location.origin : "";
+                const cleanDigits = (patient.phone || "").replace(/[^0-9]/g, "");
+                const msg = `🩺 *PostOpCheck Recovery Reminder*\n\nHi ${patient.name}, friendly reminder from your orthopedic care team to submit your *Day ${postOpDays}* knee recovery check-in today:\n\n🔗 *Log Check-in Now:*\n${portalUrl}\n\n🔑 *PIN:* ${pin}\n\nIt takes less than 60 seconds and helps your doctor ensure your recovery stays safely on track. Thank you!`;
+                const encoded = encodeURIComponent(msg);
+                const url = cleanDigits.length >= 7
+                  ? `https://wa.me/${cleanDigits}?text=${encoded}`
+                  : `https://wa.me/?text=${encoded}`;
+                window.open(url, "_blank", "noopener,noreferrer");
+                toast.success(`Opening WhatsApp reminder for ${patient.name}...`);
+              }}
+              title="Send recovery link / check-in reminder on WhatsApp"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 transition-colors"
+            >
+              <MessageSquare className="w-3.5 h-3.5 text-emerald-600 fill-emerald-600" />
+              <span className="hidden sm:inline">WhatsApp</span>
+            </button>
 
             <a
               href={`tel:${patient.phone}`}

@@ -294,6 +294,7 @@ export async function POST(request: Request) {
         kneeSide,
         accessToken,
         passcode: cleanPasscode,
+        phone: cleanPhone,
         link: `/patient/${accessToken}`,
         mlRiskProbability: mlRisk,
         mlRiskTier: mlTier,
