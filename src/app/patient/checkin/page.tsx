@@ -211,28 +211,97 @@ export default function PatientCheckinPage() {
                 </div>
               </div>
 
-              {/* Knee Flexion Degrees Slider */}
-              <div className="space-y-2">
-                <div className="flex justify-between items-center text-xs">
-                  <label className="font-semibold text-slate-200">
-                    Estimated Knee Bend Angle (Flexion Range: 60&deg; to 120&deg;)
-                  </label>
-                  <span className="text-base font-extrabold text-emerald-400">
-                    {flexionDegrees}&deg; bend
+              {/* Knee Flexion Degrees & Milestones */}
+              <div className="space-y-3 p-3.5 sm:p-4 rounded-2xl bg-slate-800/80 border border-slate-700/80">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 pb-2 border-b border-slate-700/60">
+                  <div>
+                    <label className="font-bold text-xs text-slate-200 flex items-center gap-1.5">
+                      <span>Knee Bend &amp; Motion (Range of Motion)</span>
+                      <span className="text-[10px] font-semibold text-emerald-300 bg-emerald-950/80 px-2 py-0.5 rounded-full border border-emerald-700/60">
+                        Physio Benchmark
+                      </span>
+                    </label>
+                    <p className="text-[11px] text-slate-400 mt-0.5">
+                      Select what best describes your knee bend movement today:
+                    </p>
+                  </div>
+                  <span className="font-mono font-extrabold text-emerald-400 bg-emerald-950/80 px-2.5 py-1 rounded-lg border border-emerald-600/50 text-xs shadow-2xs self-start sm:self-auto">
+                    {flexionDegrees}&deg; Bend
                   </span>
                 </div>
-                <input
-                  type="range"
-                  min="60"
-                  max="120"
-                  value={flexionDegrees}
-                  onChange={(e) => setFlexionDegrees(Number(e.target.value))}
-                  className="w-full accent-emerald-500 h-2 bg-slate-800 rounded-lg cursor-pointer"
-                />
-                <div className="flex justify-between text-[11px] text-slate-500">
-                  <span>60&deg; (Stiff)</span>
-                  <span>90&deg; (Right Angle)</span>
-                  <span>120&deg; (Advanced)</span>
+
+                {/* Patient-Friendly Milestone Selection Cards */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                  {[
+                    { deg: 45, label: "30° – 45°: Slight Bend", desc: "Slide heel back a few inches", icon: "🦶", target: false },
+                    { deg: 60, label: "60°: Halfway Bend", desc: "Bent halfway toward right angle", icon: "📐", target: false },
+                    { deg: 90, label: "90°: Chair Sitting (L-Shape)", desc: "Sit comfortably on chair with knee bent", icon: "🪑", target: true },
+                    { deg: 100, label: "100°: Stair Climbing", desc: "Bend enough to manage stairs comfortably", icon: "🪜", target: false },
+                    { deg: 115, label: "115°+: Full Rotation", desc: "Pedal bicycle through complete rotation", icon: "🚲", target: false },
+                    { deg: 125, label: "125°+: Deep Flexion", desc: "Tuck foot comfortably beneath seat", icon: "✨", target: false },
+                  ].map((card) => {
+                    const isSelected =
+                      (card.deg === 45 && flexionDegrees <= 50) ||
+                      (card.deg === 60 && flexionDegrees > 50 && flexionDegrees <= 70) ||
+                      (card.deg === 90 && flexionDegrees > 70 && flexionDegrees <= 95) ||
+                      (card.deg === 100 && flexionDegrees > 95 && flexionDegrees <= 105) ||
+                      (card.deg === 115 && flexionDegrees > 105 && flexionDegrees <= 120) ||
+                      (card.deg === 125 && flexionDegrees > 120);
+
+                    return (
+                      <button
+                        key={card.deg}
+                        type="button"
+                        onClick={() => setFlexionDegrees(card.deg)}
+                        className={`text-left p-2.5 sm:p-3 rounded-xl border transition-all cursor-pointer ${
+                          isSelected
+                            ? "bg-emerald-600 text-white border-emerald-500 shadow-xs ring-2 ring-emerald-400/30"
+                            : "bg-slate-900/90 hover:bg-slate-800 text-slate-300 border-slate-700/80"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between gap-1">
+                          <span className="font-bold text-xs flex items-center gap-1.5">
+                            <span className="text-sm">{card.icon}</span>
+                            <span className={isSelected ? "text-white" : "text-slate-100"}>{card.label}</span>
+                          </span>
+                          {card.target && (
+                            <span
+                              className={`text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded-full ${
+                                isSelected ? "bg-white text-emerald-900" : "bg-amber-400/20 text-amber-300 border border-amber-400/40"
+                              }`}
+                            >
+                              Goal
+                            </span>
+                          )}
+                        </div>
+                        <p className={`text-[11px] mt-1 leading-snug ${isSelected ? "text-emerald-100" : "text-slate-400"}`}>
+                          {card.desc}
+                        </p>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Fine-Tuning Slider */}
+                <div className="pt-2 border-t border-slate-700/60 space-y-1.5">
+                  <div className="flex justify-between items-center text-[11px] text-slate-400">
+                    <span>Fine-tune exact angle:</span>
+                    <span className="font-mono font-bold text-emerald-400">{flexionDegrees}&deg;</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="30"
+                    max="135"
+                    step="5"
+                    value={flexionDegrees}
+                    onChange={(e) => setFlexionDegrees(Number(e.target.value))}
+                    className="w-full accent-emerald-500 h-2 bg-slate-900 rounded-lg cursor-pointer"
+                  />
+                  <div className="flex justify-between text-[10px] text-slate-500 font-mono">
+                    <span>30&deg; (Slight)</span>
+                    <span className="text-emerald-400 font-bold">90&deg; (Chair L-Shape Target)</span>
+                    <span>135&deg; (Deep)</span>
+                  </div>
                 </div>
               </div>
 

@@ -1149,50 +1149,145 @@ function PatientPortalContent({ params }: { params: Promise<{ token: string }> }
                 </div>
               </div>
 
-              {/* Question 2: Knee Flexion Angle */}
-              <div className="space-y-2.5">
-                <div className="flex justify-between items-center text-xs">
-                  <label className="font-semibold text-slate-700">
-                    Knee Bend / Flexion Angle (Degrees)
-                  </label>
-                  <span className="font-bold text-teal-700 bg-teal-50 px-2.5 py-1 rounded-md border border-teal-200 text-xs">
-                    {flexionDegrees}°
-                  </span>
+              {/* Question 2: Knee Flexion Angle & Range of Motion Milestones */}
+              <div className="space-y-3 p-3.5 sm:p-4 rounded-2xl bg-slate-50/70 border border-slate-200">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 pb-2 border-b border-slate-200/80">
+                  <div>
+                    <label className="font-bold text-xs text-slate-800 flex items-center gap-1.5">
+                      <span>Knee Bend &amp; Motion (Range of Motion)</span>
+                      <span className="text-[10px] font-semibold text-teal-700 bg-teal-50 px-2 py-0.5 rounded-full border border-teal-200">
+                        Physio Benchmark
+                      </span>
+                    </label>
+                    <p className="text-[11px] text-slate-500 mt-0.5">
+                      Select the everyday activity that best describes how far you can bend your knee today:
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 self-start sm:self-auto shrink-0">
+                    <span className="font-mono font-extrabold text-teal-800 bg-teal-100/80 px-2.5 py-1 rounded-lg border border-teal-300 text-xs shadow-2xs">
+                      {flexionDegrees}° Bend
+                    </span>
+                  </div>
                 </div>
-                <input
-                  type="range"
-                  min="45"
-                  max="135"
-                  step="5"
-                  disabled={isDoctorView}
-                  value={flexionDegrees}
-                  onChange={(e) => setFlexionDegrees(Number(e.target.value))}
-                  className={`w-full accent-teal-600 h-3 bg-slate-200 rounded-lg ${
-                    isDoctorView ? "cursor-not-allowed opacity-60" : "cursor-pointer"
-                  }`}
-                />
-                {/* 1-Tap Preset Angles for Mobile Ergonomics */}
-                <div className="flex items-center gap-2 overflow-x-auto py-0.5">
-                  {[60, 75, 90, 105, 120].map((deg) => (
-                    <button
-                      key={deg}
-                      type="button"
-                      disabled={isDoctorView}
-                      onClick={() => setFlexionDegrees(deg)}
-                      className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-bold transition-colors ${
-                        flexionDegrees === deg
-                          ? "bg-teal-600 text-white shadow-2xs"
-                          : "bg-slate-100 hover:bg-slate-200 text-slate-700"
-                      } ${isDoctorView ? "cursor-not-allowed opacity-60" : ""}`}
-                    >
-                      {deg}°
-                    </button>
-                  ))}
+
+                {/* Patient-Friendly Milestone Selection Cards */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                  {[
+                    {
+                      deg: 45,
+                      label: "30° – 45°: Slight Bend",
+                      desc: "Can bend knee slightly by sliding heel back a few inches",
+                      icon: "🦶",
+                      target: false,
+                    },
+                    {
+                      deg: 60,
+                      label: "60°: Halfway Bend",
+                      desc: "Can bend knee halfway toward a right angle",
+                      icon: "📐",
+                      target: false,
+                    },
+                    {
+                      deg: 90,
+                      label: "90°: Chair Sitting (L-Shape)",
+                      desc: "Can sit comfortably on a chair with knee bent in an L-shape",
+                      icon: "🪑",
+                      target: true,
+                    },
+                    {
+                      deg: 100,
+                      label: "100°: Stair Climbing",
+                      desc: "Can bend knee enough to manage stairs comfortably",
+                      icon: "🪜",
+                      target: false,
+                    },
+                    {
+                      deg: 115,
+                      label: "115°+: Full Rotation",
+                      desc: "Can pedal a bicycle through a complete smooth rotation",
+                      icon: "🚲",
+                      target: false,
+                    },
+                    {
+                      deg: 125,
+                      label: "125°+: Deep Flexion",
+                      desc: "Can tuck foot comfortably beneath chair seat",
+                      icon: "✨",
+                      target: false,
+                    },
+                  ].map((card) => {
+                    const isSelected =
+                      (card.deg === 45 && flexionDegrees <= 50) ||
+                      (card.deg === 60 && flexionDegrees > 50 && flexionDegrees <= 70) ||
+                      (card.deg === 90 && flexionDegrees > 70 && flexionDegrees <= 95) ||
+                      (card.deg === 100 && flexionDegrees > 95 && flexionDegrees <= 105) ||
+                      (card.deg === 115 && flexionDegrees > 105 && flexionDegrees <= 120) ||
+                      (card.deg === 125 && flexionDegrees > 120);
+
+                    return (
+                      <button
+                        key={card.deg}
+                        type="button"
+                        disabled={isDoctorView}
+                        onClick={() => setFlexionDegrees(card.deg)}
+                        className={`text-left p-2.5 sm:p-3 rounded-xl border transition-all cursor-pointer ${
+                          isSelected
+                            ? "bg-teal-600 text-white border-teal-700 shadow-xs ring-2 ring-teal-500/30"
+                            : "bg-white hover:bg-slate-50 text-slate-700 border-slate-200"
+                        } ${isDoctorView ? "cursor-not-allowed opacity-60" : ""}`}
+                      >
+                        <div className="flex items-center justify-between gap-1">
+                          <span className="font-bold text-xs flex items-center gap-1.5">
+                            <span className="text-sm">{card.icon}</span>
+                            <span className={isSelected ? "text-white" : "text-slate-900"}>{card.label}</span>
+                          </span>
+                          {card.target && (
+                            <span
+                              className={`text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded-full ${
+                                isSelected
+                                  ? "bg-white text-teal-800"
+                                  : "bg-amber-100 text-amber-800 border border-amber-200"
+                              }`}
+                            >
+                              Goal
+                            </span>
+                          )}
+                        </div>
+                        <p
+                          className={`text-[11px] mt-1 leading-snug ${
+                            isSelected ? "text-teal-50" : "text-slate-500"
+                          }`}
+                        >
+                          {card.desc}
+                        </p>
+                      </button>
+                    );
+                  })}
                 </div>
-                <div className="flex justify-between text-[10px] text-slate-400">
-                  <span>45° (Stiff)</span>
-                  <span>90° (Seated chair angle)</span>
-                  <span>120° (Normal target)</span>
+
+                {/* Fine-Tuning Slider */}
+                <div className="pt-2 border-t border-slate-200/70 space-y-1.5">
+                  <div className="flex justify-between items-center text-[11px] text-slate-500">
+                    <span className="font-medium text-slate-600">Fine-tune exact angle:</span>
+                    <span className="font-mono font-bold text-teal-700">{flexionDegrees}°</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="30"
+                    max="135"
+                    step="5"
+                    disabled={isDoctorView}
+                    value={flexionDegrees}
+                    onChange={(e) => setFlexionDegrees(Number(e.target.value))}
+                    className={`w-full accent-teal-600 h-2.5 bg-slate-200 rounded-lg ${
+                      isDoctorView ? "cursor-not-allowed opacity-60" : "cursor-pointer"
+                    }`}
+                  />
+                  <div className="flex justify-between text-[10px] text-slate-400 font-mono">
+                    <span>30° (Slight bend)</span>
+                    <span className="text-teal-700 font-bold">90° (Chair L-Shape Target)</span>
+                    <span>135° (Full deep bend)</span>
+                  </div>
                 </div>
               </div>
 
