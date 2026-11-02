@@ -265,7 +265,7 @@ function PatientDetailContent() {
               onClick={() => {
                 const origin = typeof window !== "undefined" ? window.location.origin : "";
                 const cleanDigits = (patient.phone || "").replace(/[^0-9]/g, "");
-                const msg = `🩺 *PostOpCheck Recovery Reminder*\n\nHi ${patient.name}, friendly reminder from your orthopedic care team to submit your *Day ${postOpDays}* knee recovery check-in today:\n\n🔗 *Log Check-in Now:*\n${portalUrl}\n\n🔑 *PIN:* ${pin}\n\nIt takes less than 60 seconds and helps your doctor ensure your recovery stays safely on track. Thank you!`;
+                const msg = `*PostOpCheck Recovery Reminder*\n\nHi ${patient.name}, this is a reminder from your orthopedic care team to submit your Day ${postOpDays} knee recovery check-in today:\n\n*Log Check-in Now:*\n${portalUrl}\n\n*PIN:* ${pin}\n\nIt takes less than 60 seconds and helps your doctor ensure your recovery stays safely on track. Thank you!`;
                 const encoded = encodeURIComponent(msg);
                 const url = cleanDigits.length >= 7
                   ? `https://wa.me/${cleanDigits}?text=${encoded}`

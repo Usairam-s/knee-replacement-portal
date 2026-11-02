@@ -230,7 +230,7 @@ export default function DashboardPage() {
     const portalUrl = `${origin}/patient/${token}`;
     const pin = patient.passcode || "1234";
 
-    const msg = `👋 Hello ${patient.name}!\n\nThis is your surgical team from PostOpCheck 🩺. Here is your personal knee recovery link for your daily 60-second recovery check-ins following your ${patient.kneeSide} Knee TKA surgery:\n\n🔗 *Your Daily Recovery Portal:*\n${portalUrl}\n\n🔑 *Your 4-Digit Access PIN:* ${pin}\n\n📱 *Instructions:*\nPlease tap the link each morning to record your knee bend and pain score. We recommend bookmarking this page or saving this chat so you can find it easily every day. Wishing you a swift and steady recovery!`;
+    const msg = `Hello ${patient.name},\n\nThis is your surgical team from PostOpCheck. Here is your personal knee recovery link for your daily 60-second recovery check-ins following your ${patient.kneeSide} Knee TKA surgery:\n\n*Your Daily Recovery Portal:*\n${portalUrl}\n\n*Your 4-Digit Access PIN:* ${pin}\n\n*Instructions:*\nPlease open the link each morning to record your knee bend and pain score. We recommend bookmarking this page or keeping this chat so you can find it easily every day. Wishing you a swift and steady recovery!`;
     
     openWhatsApp(patient.phone, msg);
     toast.success(`Opening WhatsApp for ${patient.name}...`);
@@ -243,7 +243,7 @@ export default function DashboardPage() {
     const pin = patient.passcode || "1234";
     const day = patient.lastCheckinDay || 1;
 
-    const msg = `🩺 *PostOpCheck Recovery Reminder*\n\nHi ${patient.name}, friendly reminder from your orthopedic care team to submit your *Day ${day}* knee recovery check-in today:\n\n🔗 *Log Check-in Now:*\n${portalUrl}\n\n🔑 *PIN:* ${pin}\n\nIt takes less than 60 seconds and helps your doctor ensure your recovery stays safely on track. Thank you!`;
+    const msg = `*PostOpCheck Recovery Reminder*\n\nHi ${patient.name}, this is a reminder from your orthopedic care team to submit your Day ${day} knee recovery check-in today:\n\n*Log Check-in Now:*\n${portalUrl}\n\n*PIN:* ${pin}\n\nIt takes less than 60 seconds and helps your doctor ensure your recovery stays safely on track. Thank you!`;
 
     openWhatsApp(patient.phone, msg);
     toast.success(`Opening WhatsApp reminder for ${patient.name}...`);
